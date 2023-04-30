@@ -1,6 +1,9 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+#define N 200005
+#define int long long
+
 constexpr inline unsigned int geq_pow2(const unsigned int x) {return x & (x - 1) ? 2u << __lg(x) : x;}
 
 template<typename T>
@@ -204,26 +207,53 @@ public:
     void seg_set(int ql, int qr, T x) {seg_mineq(ql, qr, x); seg_maxeq(ql, qr, x);}
 };
 
-int main() {
+int a[N];
+bool mark[N];
+
+int32_t main() {
     ios::sync_with_stdio(false);
     cin.tie(0);
 
-    int t;
-    cin >> t;
-    while (t--) {
-        int n;
-        cin >> n;
-        vector <long long> a(n);
-        for (int i = 0; i < n; i++) {
-            cin >> a[i];
-        }
-        segtree <long long> seg(a);
-        cout << seg.seg_sum(3, 6) << endl;
-        seg.seg_add(4, 5, -3);
-        cout << seg.seg_sum(3, 6) << endl;
-        seg.seg_add(4, 5, 3);
-        cout << seg.seg_sum(3, 6) << endl;
+    int n, q;
+    cin >> n >> q;
+    for (int i = 0; i < n; i++) {
+        cin >> a[i];
+        if (i > 1) mark[i-2]=!(a[i-2]>=a[i-1] && a[i-1]>=a[i]);
     }
-    
+
+    vector <int> consec(n, 0);
+    vector <int> head(n, -1);
+
+    if (n - 3 >= 0) consec[n-3]=mark[n-3];
+    for (int i = n - 4; i >= 0; i--) {
+        consec[i] = mark[i] ? consec[i + 1] + 1 : 0;
+    }
+    head[0] = mark[0] ? 0 : -1;
+    for (int i = 1; i < n - 2; i++) {
+        if (mark[i]) {
+            if (mark[i - 1]) head[i] = head[i - 1];
+            else head[i] = i;
+        }
+    }
+
+    segtree <long long> seg(consec);
+
+    for (int i = 0; i < q; i++) {
+        int l, r; 
+        cin >> l >> r; 
+        l--; r--;
+
+        int ans = r - l + 1;
+        if (r - l >= 2) {
+            int cutpos = max(0LL, r - 2);
+            if (consec[cutpos] > 1) seg.seg_add(head[cutpos], cutpos, -consec[cutpos] + 1);
+
+            ans = seg.seg_max(l, cutpos) + 2;
+
+            if (consec[cutpos] > 1) seg.seg_add(head[cutpos], cutpos, consec[cutpos] - 1);
+        }
+        cout << ans << endl;
+    }
+
     return 0;
 }
